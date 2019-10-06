@@ -12,7 +12,7 @@ let acum = 0;
 
 let vd = tmp(acum);
 
-document.body.appendChild(rootEl = createElementVNode(vd));
+document.getElementById("timer").appendChild(rootEl = createElementVNode(vd));
 
 setInterval(() => {
     acum++;
