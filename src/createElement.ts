@@ -17,14 +17,17 @@ export function extractEventName(name: string): string {
     return name.slice(2).toLowerCase();
 }
 
-function setProps(target: HTMLElement, props: any) {
+function setProps(target: HTMLElement, props: any, refs:any) {
     if (!props) return;
     Object.keys(props).forEach(name => {
-        setProp(target, name, props[name]);
+        setProp(target, name, props[name], refs);
     });
 }
 
-export function setProp(target: HTMLElement, name: string, value: any) {
+export function setProp(target: HTMLElement, name: string, value: any, refs: any) {
+    if(name === 'ref') {
+        refs[value] = target;
+    }
     if (typeof value === 'number' || typeof value === 'string') {
         target.setAttribute(name, value.toString());
     } else if(typeof value === 'boolean') {
@@ -59,17 +62,17 @@ function addEventListeners(target: any, props: any) {
     });
 }
 
-export function createElementVNode(node: vNode | string | number): HTMLElement|Text {
+export function createElementVNode(node: vNode | string | number, refs: any): HTMLElement|Text {
     if (typeof node === 'string' || typeof node === 'number') {
         return document.createTextNode(node.toString());
     }
     const el = document.createElement(node.type);
-    setProps(el, node.attrs);
+    setProps(el, node.attrs, refs);
     addEventListeners(el, node.attrs);
     if (node.children && node.children.length > 0) {
         const fragChilds = document.createDocumentFragment();
         for(let i = 0; i < node.children.length; i++) {
-            let vNonde = createElementVNode(node.children[i]);
+            let vNonde = createElementVNode(node.children[i], refs);
             fragChilds.appendChild(vNonde)
         }
         el.appendChild(fragChilds);

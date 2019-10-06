@@ -1,7 +1,7 @@
 import { vNodePatch, vNode } from "./interfaces";
 import { createElementVNode, isEventProp, removeProp, setProp } from "./createElement";
 
-function diffChildren(newNode: vNode, oldNode: vNode): vNodePatch[] {
+function diffChildren(oldNode: vNode, newNode: vNode, refs: any): vNodePatch[] {
     const patches = [];
     const patchesLength = Math.max(
         (newNode && newNode.children)?newNode.children.length:0,
@@ -9,16 +9,16 @@ function diffChildren(newNode: vNode, oldNode: vNode): vNodePatch[] {
     );
     for (let i = 0; i < patchesLength; i++) {
         let df: any = diff(
+            oldNode.children[i],
             newNode.children[i],
-            oldNode.children[i]
+            refs
         )
         if (df) patches[i] = df;
     }
-    if(patches.length === 0) return [];
     return patches;
 }
 
-function diffAttributes(oldAttrs:any, newAttrs:any):Function[] {
+function diffAttributes(oldAttrs:any, newAttrs:any, refs:any):Function[] {
     let patches = [];
     const props = Object.assign({}, newAttrs, oldAttrs);
     Object.keys(props).forEach(name => {
@@ -47,7 +47,7 @@ function diffAttributes(oldAttrs:any, newAttrs:any):Function[] {
                 });
             } else if (oldVal === undefined || JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
                 patches.push(($node:HTMLElement) => {
-                    setProp($node, name, newVal);
+                    setProp($node, name, newVal, refs);
                 });
             }
         }
@@ -57,7 +57,7 @@ function diffAttributes(oldAttrs:any, newAttrs:any):Function[] {
     return patches;
   }
 
-export function diff(oldNode: vNode | string, newNode: vNode | string):vNodePatch {
+export function diff(oldNode: vNode | string, newNode: vNode | string, refs:any):vNodePatch {
     let patch:vNodePatch = {
         action: null,
         attrActions: [],
@@ -67,7 +67,7 @@ export function diff(oldNode: vNode | string, newNode: vNode | string):vNodePatc
     if (typeof oldNode === 'string' || typeof newNode === 'string' || typeof oldNode === 'number' || typeof newNode === 'number') {
         if (oldNode !== newNode) {
             patch.action = ($node: HTMLElement) => {
-                return $node.replaceWith(createElementVNode(newNode));
+                return $node.replaceWith(createElementVNode(newNode, refs));
             };
         }
         return patch;
@@ -75,6 +75,9 @@ export function diff(oldNode: vNode | string, newNode: vNode | string):vNodePatc
 
     if(oldNode && !newNode) {
         patch.action = ($node: HTMLElement) => {
+            if($node.hasAttribute('ref')) {
+                delete refs[$node.getAttribute('ref')]
+            }
             $node.remove();
             return;
         };
@@ -82,7 +85,7 @@ export function diff(oldNode: vNode | string, newNode: vNode | string):vNodePatc
     }
     if(!oldNode && newNode) {
         patch.action = ($node, $parent: HTMLElement) => {
-            return $parent.appendChild(createElementVNode(newNode));
+            return $parent.appendChild(createElementVNode(newNode, refs));
         };
         return patch;
     }
@@ -90,14 +93,15 @@ export function diff(oldNode: vNode | string, newNode: vNode | string):vNodePatc
 
     if(oldNode.type !== newNode.type) {
         patch.action = ($node:HTMLElement) => {
-            return $node.replaceWith(createElementVNode(newNode));
+            if($node.hasAttribute('ref')) {
+                delete refs[$node.getAttribute('ref')]
+            }
+            return $node.replaceWith(createElementVNode(newNode, refs));
         };
         return patch;
     }
 
-
-    
-    patch.attrActions = diffAttributes(oldNode.attrs, newNode.attrs);
-    patch.childrenPatch = diffChildren(newNode, oldNode);
+    patch.attrActions = diffAttributes(oldNode.attrs, newNode.attrs, refs);
+    patch.childrenPatch = diffChildren(oldNode, newNode, refs);
     return patch;
 }

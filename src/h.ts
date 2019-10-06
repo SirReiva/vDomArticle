@@ -8,11 +8,15 @@ declare global {
     }
 }
 
+function flatten(arr: any[]): any[] {
+    return [].concat.apply([], arr);
+}
+
 export function h(type: string, attrs: any, ...children: ChildrenNode[]): vNode | null {
-    if(!type) return null;
+    if(!type || typeof type !== 'string') return null;
     return {
         type,
         attrs,
-        children: [...children].filter(c => c !== null && c !== undefined)
+        children: flatten(children.filter(ch => (ch !== null && ch !== undefined)))
     }
 }
