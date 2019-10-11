@@ -4,13 +4,13 @@ export interface vNode {
     children: ChildrenNode[]
 }
 
+export type ChildrenNode = string | vNode;
+
 export interface vNodePatch {
     action: Function;
     attrActions: Function[];
     childrenPatch: vNodePatch[];
 }
-
-export type ChildrenNode = string | vNode;
 
 export interface vNodePatchQuery {
     $root: HTMLElement;
