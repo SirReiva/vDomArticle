@@ -28,16 +28,19 @@ export function setProp(target: HTMLElement, name: string, value: any, refs: any
     if(name === 'ref') {
         refs[value] = target;
     }
-    if (typeof value === 'number' || typeof value === 'string') {
+    if(value === null || value === undefined) {
+        target.setAttribute(name, '');
+    } else if (typeof value === 'number' || typeof value === 'string') {
         target.setAttribute(name, value.toString());
     } else if(typeof value === 'boolean') {
         (value)?target.setAttribute(name, ''):target.removeAttribute(name);
-        if(SPECIAL_REFLECT_ATTRIBUTES.includes(name)) target[name] = value;
     } else if(Array.isArray(value) || isObject(value)) {
         target.setAttribute(name, JSON.stringify(value));
     } else if (isFunction(value)) {
         target.setAttribute(name, '' + value)
     }
+    
+    if(SPECIAL_REFLECT_ATTRIBUTES.includes(name)) target[name] = value;
 }
 
 export function removeProp(target: HTMLElement, propName: string) {
